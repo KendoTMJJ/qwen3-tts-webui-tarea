@@ -176,7 +176,7 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/python
 result/
 .direnv/
-output/
+
 reference_audios/
 generated_metadata.json
 reference_metadata.json
