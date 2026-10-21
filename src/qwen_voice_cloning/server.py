@@ -674,6 +674,14 @@ async def clone_voice_endpoint(
     # Use provided ref_text or stored one
     ref_text = request.ref_text or ref_data.get("ref_text")
     if not ref_text:
+        # Re-transcribe if the stored ref_text is missing (e.g. earlier failure)
+        try:
+            ref_text = voice_cloner.transcribe_audio(str(ref_audio_path))
+            ref_data["ref_text"] = ref_text
+            save_reference_metadata(metadata)
+        except Exception:  # noqa: BLE001
+            logger.warning("Failed to auto-transcribe %s", ref_audio_path)
+    if not ref_text:
         raise HTTPException(status_code=400, detail="Reference text is required")
 
     # Generate task ID
@@ -836,6 +844,15 @@ async def clone_voice_with_upload(  # noqa: C901, PLR0915
         # Use existing ref_text if not provided
         if not ref_text:
             ref_text = existing_data.get("ref_text")
+
+        # Re-transcribe if the stored ref_text is missing (e.g. earlier failure)
+        if not ref_text:
+            try:
+                ref_text = voice_cloner.transcribe_audio(str(ref_audio_path))
+                existing_data["ref_text"] = ref_text
+                save_reference_metadata(metadata)
+            except Exception:  # noqa: BLE001
+                logger.warning("Failed to auto-transcribe %s", ref_audio_path)
     else:
         # New file - move trimmed file to final location
         audio_id = str(uuid.uuid4())
